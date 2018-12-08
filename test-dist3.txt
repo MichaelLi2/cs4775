@@ -1,0 +1,4 @@
+Human	Chimp	Gorilla
+Human	0	0.01339	0.017734
+Chimp	0.01339	0	0.018024
+Gorilla	0.017734	0.018024	0
