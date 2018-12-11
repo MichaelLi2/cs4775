@@ -9,7 +9,7 @@ Outputs:
 ##################################################################
 
 Example Usage:
-    python my_STRUCTURElinkedlocus.py -f strucutre_input.txt -k 2
+    python my_STRUCTURElinkedloci.py -f strucutre_input.txt -k 2
 '''
 
 import numpy as np
@@ -93,15 +93,19 @@ def struct(seqs, name, k):
         n.append(nums)
     #list of admixture proportions for each sample q[samp][pop]
     q = []
+    qtemp = []
     #counts of alleles in each sample origionated in each population m[samp][pop]
     m = []
     for g in seqs:
         props = []
+        propst = []
         nums = []
         for h in range(k):
             props.append(0.0)
+            propst.append(0.0)
             nums.append(0.0)
         q.append(props)
+        qtemp.append(propst)
         m.append(nums)
 
     #random initialization of Z
@@ -126,21 +130,15 @@ def struct(seqs, name, k):
         z2.append(rand_init2)
 
     #probability matrix for z, pis[sample][locus][populations]
-    pis1 = []
-    pis2 = []
+    pis = []
     for b1 in seqs:
         samps1 = []
-        samps2 = []
         for b2 in range(len(b1)):
             pops1 = []
-            pops2 = []
             for b5 in range(k):
-                pops1.append(0.0)
-                pops2.append(0.0)
+                pops1.append([0.0,0.0])
             samps1.append(pops1)
-            samps2.append(pops2)
-        pis1.append(samps1)
-        pis2.append(samps2)
+        pis.append(samps1)
     #temporary z values
     z1temp = []
     z2temp = []
@@ -153,24 +151,13 @@ def struct(seqs, name, k):
         z1temp.append(temp1)
         z2temp.append(temp2)
 
-    #value of betas with last population value as total, beta[locus][pop]
-    beta1 = []
-    beta2 = []
-    for lcs in range(len(seqs[0])):
-        beta1k = []
-        beta2k = []
-        for po in range(k+1):
-            beta1k.append(0.0)
-            beta2k.append(0.0)
-        beta1.append(beta1k)
-        beta2.append(beta2k)
-
     #rate for the linked loci model
-    r = 10
+    r = 0.001
     #likelihood of population assignments, initially set to min number
     likelihood = -999999999999999
+    q_likelihood = -999999999999999
     #iterations
-    for i in range(300):
+    for i in range(60):
         if i%10 == 0: print i
         #zero out n and m
         for i1 in range(k):
@@ -209,144 +196,166 @@ def struct(seqs, name, k):
             for s in range(len(seqs[0])):
                 p[r1][s] = np.random.dirichlet(n[r1][s])
         #sample q from dirchlet distribution
+        new_q_likeli = 0
         for t in range(len(seqs)):
-            q[t] = np.random.dirichlet(m[t])
-        #print q
-        #print p
+            q[t] = np.random.dirichlet(m[t])#qtemp?
+            for t2 in range(k):
+                new_q_likeli = new_q_likeli + np.log(q[t][t2])#qtemp?
+        #metropolis hastings update for q
+        #if new_q_likeli >= q_likelihood:
+        #    for t3 in range(len(seqs)):
+        #        for t4 in range(k):
+        #            q[t3][t4] = qtemp[t3][t4]
+        #else:
+        #    rand = random.random()
+        #    if rand < new_q_likeli/q_likelihood:
+        #        for t3 in range(len(seqs)):
+        #            for t4 in range(k):
+        #                q[t3][t4] = qtemp[t3][t4]
+
 
         #create probability matix for alleles to sample z from
         for u in range(len(seqs)):
+            #value of betas, beta[locus][pop][allele]
+            beta = []
+            for lcs in range(len(seqs[0])):
+                betak = []
+                for po in range(k):
+                    betak.append([0.0,0.0])
+                beta.append(betak)
             #forward step, compute all the betas
             for v in range(len(seqs[u])):
                 #first loci betas calculated differently
                 if v == 0:
                     for w in range(k):
-                        #if allele in sample u, locus v is the first allele
-                        if seqs[u][v] == "0":
-                            beta1[v][w] = q[u][w] * p[w][v][0]
-                            beta1[[v]k] = beta1[v][k] + q[u][w] * p[w][v][0]
-                            beta2[v][w] = q[u][w] * p[w][v][0]
-                            beta2[v][k] = beta2[v][k] + q[u][w] * p[w][v][0]
-                        #if allele in sample u, locus v is the second allele
-                        elif seqs[u][v] == "2":
-                            beta1[v][w] = q[u][w] * p[w][v][1]
-                            beta1[v][k] = beta1[v][k] + q[u][w] * p[w][v][1]
-                            beta2[v][w] = q[u][w] * p[w][v][1]
-                            beta2[v][k] = beta2[v][k] + q[u][w] * p[w][v][1]
-                        #if there is one of each at the locus, allele could be either, assume first/second
-                        elif seqs[u][v] == "1":
-                            beta1[v][w] = q[u][w] * p[w][v][0]
-                            beta1[v][k] = beta1[v][k] + q[u][w] * p[w][v][0]
-                            beta2[v][w] = q[u][w] * p[w][v][1]
-                            beta2[v][k] = beta2[v][k] + q[u][w] * p[w][v][1]
-                        #if unkown, average?
-                        else:
-                            beta1[v][w] = q[u][w] * (p[w][v][1] + p[w][v][0])/2
-                            beta1[v][k] = beta1[v][k] + q[u][w] * (p[w][v][1] + p[w][v][0])/2
-                            beta2[v][w] = q[u][w] * (p[w][v][1] + p[w][v][0])/2
-                            beta2[v][k] = beta2[v][k] + q[u][w] * (p[w][v][1] + p[w][v][0])/2
+                        for y in range(k):
+                            #if allele in sample u, locus v is the first allele
+                            if seqs[u][v:v+1] == "0":
+                                beta[v][w][y] = q[u][w] * p[w][v][0] * q[u][y] * p[y][v][0]
+                            #if allele in sample u, locus v is the second allele
+                            elif seqs[u][v:v+1] == "2":
+                                beta[v][w][y] = q[u][w] * p[w][v][1] * q[u][y] * p[y][v][1]
+                            #if there is one of each at the locus, allele could be either, assume first/second
+                            elif seqs[u][v:v+1] == "1":
+                                beta[v][w][y] = q[u][w] * p[w][v][0] * q[u][y] * p[y][v][1]
+                            #if unkown, average?
+                            else:
+                                beta[v][w][y] = q[u][w] * (p[w][v][1] + p[w][v][0]) * q[u][y] * (p[y][v][1] + p[y][v][0])/4
                 else:
                     for w2 in range(k):
-                        #if allele in sample u, locus v is the first allele
-                        if seqs[u][v] == "0":
-                            #might need to include d? right now is just 1
-                            nb1 = beta1[v-1][k] * q[u][w2] * p[w2][v][0] * (1-exp(r*(-1))) + beta1[v-1][w2] * p[w2][v][0] * exp(r*(-1))
-                            beta1[v][w2] = nb1
-                            beta1[v][k] = beta1[v][k] + nb1
-                            nb2 = beta2[v-1][k] * q[u][w2] * p[w2][v][0] * (1-exp(r*(-1))) + beta2[v-1][w2] * p[w2][v][0] * exp(r*(-1))
-                            beta2[v][w2] = nb2
-                            beta2[v][k] = beta2[[v]k] + nb2
-                        #if allele in sample u, locus v is the second allele
-                        elif seqs[u][v] == "2":
-                            nb1 = beta1[v-1][k] * q[u][w2] * p[w2][v][1] * (1-exp(r*(-1))) + beta1[v-1][w2] * p[w2][v][1] * exp(r*(-1))
-                            beta1[v][w2] = nb1
-                            beta1[v][k] = beta1[v][k] + nb1
-                            nb2 = beta2[v-1][k] * q[u][w2] * p[w2][v][1] * (1-exp(r*(-1))) + beta2[v-1][w2] * p[w2][v][1] * exp(r*(-1))
-                            beta2[v][w2] =
-                            beta2[v][k] = beta2[v][k] +
-                        #if there is one of each at the locus, allele could be either, assume first?
-                        elif seqs[u][v] == "1":
-                            nb1 = beta1[v-1][k] * q[u][w2] * p[w2][v][0] * (1-exp(r*(-1))) + beta1[v-1][w2] * p[w2][v][0] * exp(r*(-1))
-                            beta1[v][w2] = nb1
-                            beta1[v][k] = beta1[v][k] + nb1
-                            nb2 = beta2[v-1][k] * q[u][w2] * p[w2][v][1] * (1-exp(r*(-1))) + beta2[v-1][w2] * p[w2][v][1] * exp(r*(-1))
-                            beta2[v][w2] = nb2
-                            beta2[v][k] = beta2[v][k] + nb2
-                        #if unkown, average?
-                        else:
-                            nb1 = beta1[v-1][k] * q[u][w2] * ((p[w2][v][1] + p[w2][v][0])/2) * (1-exp(r*(-1))) + beta1[v-1][w2] * ((p[w2][v][1] + p[w2][v][0])/2) * exp(r*(-1))
-                            beta1[v][w2] = nb1
-                            beta1[v][k] = beta1[v][k] + nb1
-                            nb2 = beta2[v-1][k] * q[u][w2] * ((p[w2][v][1] + p[w2][v][0])/2) * (1-exp(r*(-1))) + beta2[v-1][w2] * ((p[w2][v][1] + p[w2][v][0])/2) * exp(r*(-1))
-                            beta2[v][w2] = nb2
-                            beta2[v][k] = beta2[v][k] + nb2
+                        for y2 in range(k):
+                            #if allele in sample u, locus v is the first allele
+                            for ks in range(k):
+                                for ks2 in range(k):
+                                    if w2 == ks:
+                                        p11 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][ks]
+                                    else:
+                                        p11 = (1-exp(r*(-1))) * q[u][ks]
+                                    if w2 == ks2:
+                                        p12 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][ks2]
+                                    else:
+                                        p12 = (1-exp(r*(-1))) * q[u][ks2]
+                                    if y2 == ks:
+                                        p21 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][ks]
+                                    else:
+                                        p21 = (1-exp(r*(-1))) * q[u][ks]
+                                    if y2 == ks2:
+                                        p22 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][ks2]
+                                    else:
+                                        p22 = (1-exp(r*(-1))) * q[u][ks2]
+                                    if seqs[u][v:v+1] == "0":
+                                        beta[v][w2][y2] = beta[v][w2][y2]+p[w2][v][0]*p[y2][v][0]*beta[v-1][ks][ks2]*0.5*(p11*p22+p21*p12)
+                                    #if allele in sample u, locus v is the second allele
+                                    elif seqs[u][v:v+1] == "2":
+                                        beta[v][w2][y2] = beta[v][w2][y2]+p[w2][v][1]*p[y2][v][1]*beta[v-1][ks][ks2]*0.5*(p11*p22+p21*p12)
+                                    #if there is one of each at the locus, allele could be either, assume first?
+                                    elif seqs[u][v:v+1] == "1":
+                                        beta[v][w2][y2] = beta[v][w2][y2]+p[w2][v][0]*p[y2][v][1]*beta[v-1][ks][ks2]*0.5*(p11*p22+p21*p12)
+                                    #if unkown, average?
+                                    else:
+                                        beta[v][w2][y2] = beta[v][w2][y2]+((p[ks][v][1]+p[ks][v][0])/2)*beta[v-1][ks][ks2]*((p[ks2][v][1]+p[ks2][v][0])/2)*0.5*(p11*p22+p12*p21)
+
             #backwards caluculation for the probabilities to sample z from
             #sample z at the same time since value used for one locus is used in next iteration
             #final loci probabilities are just beta_locus,population
             new_likelihood = 0.0
-            total_pi1 = 0.0
-            total_pi2 = 0.0
+            total_pi = 0.0
+            #print beta[len(seqs[u])-1]
             for w3 in range(k):
-                pis1[u][len(seqs[u])-1][w3] = beta1[len(seqs[u])-1][w3]
-                total_pi1 = total_pi1 + beta1[len(seqs[u])-1][w3]
-                pis2[u][len(seqs[u])-1][w3] = beta2[len(seqs[u])-1][w3]
-                total_pi2 = total_pi2 + beta2[len(seqs[u])-1][w3]
+                for w3w in range(k):
+                    pis[u][len(seqs[u])-1][w3][w3w] = beta[len(seqs[u])-1][w3][w3w]
+                    total_pi = total_pi + beta[len(seqs[u])-1][w3][w3w]
+            for x in range(k):
+                for xx in range(k):
+                    pis[u][len(seqs[u])-1][x][xx] = pis[u][len(seqs[u])-1][x][xx] / total_pi
+            #print pis[u][len(seqs[u])-1]
             #sample z for last loci
             ran1 = random.random()
+            flag = 0
             for bb in range(k):
-                ran1 = ran1 - pis1[u][len(seqs[u])-1][bb]
-                if ran1 < 0:
-                    z1temp[u][len(seqs[u])-1] = bb
-                    new_likelihood = new_likelihood + np.log(pis1[u][len(seqs[u])-1][bb])
-                    break
-            ran2 = random.random()
-            for cc in range(k):
-                ran2 = ran2 - pis2[u][len(seqs[u])-1][cc]
-                if ran2 < 0:
-                    z2temp[u][len(seqs[u])-1] = cc
-                    new_likelihood = new_likelihood + np.log(pis2[u][len(seqs[u])-1][cc])
-                    break
-            #calculate probabilities and sample z for rest of loci
+                if flag == 1: break
+                for cc in range(k):
+                    ran1 = ran1 - pis[u][len(seqs[u])-1][bb][cc]
+                    if ran1 < 0:
+                        z1temp[u][len(seqs[u])-1] = bb
+                        z2temp[u][len(seqs[u])-1] = cc
+                        new_likelihood = new_likelihood + np.log(pis[u][len(seqs[u])-1][bb][cc])
+                        flag = 1
+                        break
+            #calculate probabilities for rest of loci
             for v2 in range(len(seqs[u]) - 2, -1, -1):
-                total_pi1 = 0.0
-                total_pi2 = 0.0
+                total_pi = 0.0
                 for w4 in range(k):
-                    pis1[u][v2][w4] = beta1[v2][w4] * '''''''''FINISH'''''''''
-                    pis2[u][v2][w4] = beta2[v2][w4] * '''''''''FINISH'''''''''
-
-
-        #sample z from pi and calculate likelihood
-        #new_likelihood = 0
-        #for y in range(len(seqs)):
-        #    for aa in range(len(seqs[y])):
-        #        ran1 = random.random()
-        #        for bb in range(k):
-        #            ran1 = ran1 - pis1[y][aa][bb]
-        #            if ran1 < 0:
-        #                #z1[y][aa] = bb
-        #                z1temp[y][aa] = bb
-        #                new_likelihood = new_likelihood + np.log(pis1[y][aa][bb])
-        #                break
-        #        ran2 = random.random()
-        #        for cc in range(k):
-        #            ran2 = ran2 - pis2[y][aa][cc]
-        #            if ran2 < 0:
-        #                #z2[y][aa] = cc
-        #                z2temp[y][aa] = cc
-        #                new_likelihood = new_likelihood + np.log(pis2[y][aa][cc])
-        #                break
+                    for w4w in range(k):
+                        if z1temp[u][v2+1] == w4:#z1temp?
+                            p11 = exp(r*(-1)) + (1-exp(r*(-1)))*q[u][w4]
+                        else:
+                            p11 = (1-exp(r*(-1))) * q[u][w4]
+                        if z1temp[u][v2+1] == w4w:
+                            p12 = exp(r*(-1)) + (1-exp(r*(-1)))*q[u][w4w]
+                        else:
+                            p12 = (1-exp(r*(-1))) * q[u][w4w]
+                        if z2temp[u][v2+1] == w4:
+                            p21 = exp(r*(-1)) + (1-exp(r*(-1)))*q[u][w4]
+                        else:
+                            p21 = (1-exp(r*(-1))) * q[u][w4]
+                        if z2temp[u][v2+1] == w4w:
+                            p22 = exp(r*(-1)) + (1-exp(r*(-1)))*q[u][w4w]
+                        else:
+                            p22 = (1-exp(r*(-1))) * q[u][w4w]
+                        pis[u][v2][w4][w4w] = beta[v2][w4][w4w]*0.5*(p22*p11+p21*p12)
+                        total_pi = total_pi + beta[v2][w4][w4w]*0.5*(p22*p11+p21*p12)
+                for x2 in range(k):
+                    for xx2 in range(k):
+                        pis[u][v2][x2][xx2] = pis[u][v2][x2][xx2] / total_pi
+                #print pis[u][v2]
+                #sample z for rest of loci
+                ran2 = random.random()
+                flag = 0
+                for gg in range(k):
+                    if flag == 1: break
+                    for ff in range(k):
+                        ran2 = ran2 - pis[u][v2][gg][ff]
+                        if ran2 < 0:
+                            z1temp[u][v2] = gg
+                            z2temp[u][v2] = ff
+                            new_likelihood = new_likelihood + np.log(pis[u][v2][gg][ff])
+                            flag = 1
+                            break
 
         #if likelihood is iproved, update z
         if new_likelihood > likelihood:
             print new_likelihood
             likelihood = new_likelihood
             for dd in range(len(seqs)):
-                for ee in range(len(seqs[y])):
+                for ee in range(len(seqs[dd])):
                     z1[dd][ee] = z1temp[dd][ee]
                     z2[dd][ee] = z2temp[dd][ee]
 
-
-    #print pis2
+    #print beta
+    #print "_____________"
+    #print pis[0]
+    #print pis[80]
     #print p[0]
     #print "----------------------"
     #print p[1]
@@ -373,9 +382,9 @@ def main():
             total2 = 0
         print proportions[i]
         if proportions[i][0] < 0.5:
-            total1 = total1 + 1
-        else:
             total2 = total2 + 1
+        else:
+            total1 = total1 + 1
     print "normal from pop1: " + str(total1)
     print "normal from pop2: " + str(total2)
 

@@ -260,7 +260,7 @@ def struct(seqs, name, k):
             print new_likelihood
             likelihood = new_likelihood
             for dd in range(len(seqs)):
-                for ee in range(len(seqs[y])):
+                for ee in range(len(seqs[dd])):
                     z1[dd][ee] = z1temp[dd][ee]
                     z2[dd][ee] = z2temp[dd][ee]
 
@@ -292,9 +292,9 @@ def main():
             total2 = 0
         print proportions[i]
         if proportions[i][0] < 0.5:
-            total1 = total1 + 1
-        else:
             total2 = total2 + 1
+        else:
+            total1 = total1 + 1
     print "normal from pop1: " + str(total1)
     print "normal from pop2: " + str(total2)
 
