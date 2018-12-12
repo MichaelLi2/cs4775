@@ -152,12 +152,12 @@ def struct(seqs, name, k):
         z2temp.append(temp2)
 
     #rate for the linked loci model
-    r = 0.001
+    r = 0.03
     #likelihood of population assignments, initially set to min number
     likelihood = -999999999999999
     q_likelihood = -999999999999999
     #iterations
-    for i in range(60):
+    for i in range(120):
         if i%10 == 0: print i
         #zero out n and m
         for i1 in range(k):
@@ -198,20 +198,20 @@ def struct(seqs, name, k):
         #sample q from dirchlet distribution
         new_q_likeli = 0
         for t in range(len(seqs)):
-            q[t] = np.random.dirichlet(m[t])#qtemp?
+            qtemp[t] = np.random.dirichlet(m[t])#qtemp?
             for t2 in range(k):
-                new_q_likeli = new_q_likeli + np.log(q[t][t2])#qtemp?
+                new_q_likeli = new_q_likeli + np.log(qtemp[t][t2])#qtemp?
         #metropolis hastings update for q
-        #if new_q_likeli >= q_likelihood:
-        #    for t3 in range(len(seqs)):
-        #        for t4 in range(k):
-        #            q[t3][t4] = qtemp[t3][t4]
-        #else:
-        #    rand = random.random()
-        #    if rand < new_q_likeli/q_likelihood:
-        #        for t3 in range(len(seqs)):
-        #            for t4 in range(k):
-        #                q[t3][t4] = qtemp[t3][t4]
+        if new_q_likeli >= q_likelihood:
+            for t3 in range(len(seqs)):
+                for t4 in range(k):
+                    q[t3][t4] = qtemp[t3][t4]
+        else:
+            rand = random.random()
+            if rand < new_q_likeli/q_likelihood:
+                for t3 in range(len(seqs)):
+                    for t4 in range(k):
+                        q[t3][t4] = qtemp[t3][t4]
 
 
         #create probability matix for alleles to sample z from
@@ -248,21 +248,21 @@ def struct(seqs, name, k):
                             for ks in range(k):
                                 for ks2 in range(k):
                                     if w2 == ks:
-                                        p11 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][ks]
+                                        p11 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][w2]
                                     else:
-                                        p11 = (1-exp(r*(-1))) * q[u][ks]
+                                        p11 = (1-exp(r*(-1))) * q[u][w2]
                                     if w2 == ks2:
-                                        p12 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][ks2]
+                                        p12 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][y2]
                                     else:
-                                        p12 = (1-exp(r*(-1))) * q[u][ks2]
+                                        p12 = (1-exp(r*(-1))) * q[u][y2]
                                     if y2 == ks:
-                                        p21 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][ks]
+                                        p21 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][w2]
                                     else:
-                                        p21 = (1-exp(r*(-1))) * q[u][ks]
+                                        p21 = (1-exp(r*(-1))) * q[u][w2]
                                     if y2 == ks2:
-                                        p22 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][ks2]
+                                        p22 = exp(r*(-1)) + (1-exp(r*(-1))) * q[u][y2]
                                     else:
-                                        p22 = (1-exp(r*(-1))) * q[u][ks2]
+                                        p22 = (1-exp(r*(-1))) * q[u][y2]
                                     if seqs[u][v:v+1] == "0":
                                         beta[v][w2][y2] = beta[v][w2][y2]+p[w2][v][0]*p[y2][v][0]*beta[v-1][ks][ks2]*0.5*(p11*p22+p21*p12)
                                     #if allele in sample u, locus v is the second allele
