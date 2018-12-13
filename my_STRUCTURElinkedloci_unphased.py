@@ -157,7 +157,7 @@ def struct(seqs, name, k):
     likelihood = -999999999999999
     q_likelihood = -999999999999999
     #iterations
-    for i in range(120):
+    for i in range(60):
         if i%10 == 0: print i
         #zero out n and m
         for i1 in range(k):
