@@ -166,7 +166,7 @@ def struct(seqs, name, k):
         beta2.append(beta2k)
 
     #rate for the linked loci model
-    r = 1000
+    r = 0.03
     #likelihood of population assignments, initially set to min number
     likelihood = -999999999999999
     #iterations
@@ -347,7 +347,7 @@ def struct(seqs, name, k):
                         new_likelihood = new_likelihood + np.log(pis2[u][v2][gg])
                         break
 
-        #if likelihood is iproved, update z
+        #if likelihood is improved, update z
         if new_likelihood > likelihood:
             print new_likelihood
             likelihood = new_likelihood

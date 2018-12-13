@@ -198,9 +198,9 @@ def struct(seqs, name, k):
         #sample q from dirchlet distribution
         new_q_likeli = 0
         for t in range(len(seqs)):
-            qtemp[t] = np.random.dirichlet(m[t])#qtemp?
+            qtemp[t] = np.random.dirichlet(m[t])
             for t2 in range(k):
-                new_q_likeli = new_q_likeli + np.log(qtemp[t][t2])#qtemp?
+                new_q_likeli = new_q_likeli + np.log(qtemp[t][t2])
         #metropolis hastings update for q
         if new_q_likeli >= q_likelihood:
             for t3 in range(len(seqs)):
@@ -343,7 +343,7 @@ def struct(seqs, name, k):
                             flag = 1
                             break
 
-        #if likelihood is iproved, update z
+        #if likelihood is improved, update z
         if new_likelihood > likelihood:
             print new_likelihood
             likelihood = new_likelihood

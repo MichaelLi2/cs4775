@@ -155,7 +155,7 @@ def struct(seqs, name, k):
 
     likelihood = -999999999999999
     #iterations
-    for i in range(300):
+    for i in range(80):
         if i%10 == 0: print i
         #zero out n and m
         for i1 in range(k):
@@ -255,7 +255,7 @@ def struct(seqs, name, k):
                         new_likelihood = new_likelihood + np.log(pis2[y][aa][cc])
                         break
 
-        #if likelihood is iproved, update z
+        #if likelihood is improved, update z
         if new_likelihood > likelihood:
             print new_likelihood
             likelihood = new_likelihood
