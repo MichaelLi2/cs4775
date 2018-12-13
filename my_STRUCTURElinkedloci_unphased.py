@@ -157,7 +157,7 @@ def struct(seqs, name, k):
     likelihood = -999999999999999
     q_likelihood = -999999999999999
     #iterations
-    for i in range(60):
+    for i in range(80):
         if i%10 == 0: print i
         #zero out n and m
         for i1 in range(k):
@@ -198,6 +198,7 @@ def struct(seqs, name, k):
         #sample q from dirchlet distribution
         new_q_likeli = 0
         for t in range(len(seqs)):
+            q[t] = np.random.dirichlet(m[t])
             qtemp[t] = np.random.dirichlet(m[t])
             for t2 in range(k):
                 new_q_likeli = new_q_likeli + np.log(qtemp[t][t2])
