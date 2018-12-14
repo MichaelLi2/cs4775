@@ -4,12 +4,10 @@ Arguments:
     -f: set of sequences to process
     -k: the number of populations desired
 Outputs:
-##################################################################
-    DON'T FORGET TO DO THIS
-##################################################################
+    - a list of each sample's admixture proportions for each population
 
 Example Usage:
-    python my_STRUCTURElinkedloci.py -f strucutre_input.txt -k 2
+    python my_STRUCTURElinkedloci_unphased.py -f strucutre_input.txt -k 2
 '''
 
 import numpy as np
@@ -42,10 +40,8 @@ def read_allele(filename):
                 #isolate IDs
                 name = l.split(' ', 1)[0]
                 ids.append(name)
-                #print name
                 #add sequence to output list
-                output.append(''.join(l.split())[len(name):])#l.replace("" "", "")[len(name):])
-                #print ''.join(l.split())[len(name):]
+                output.append(''.join(l.split())[len(name):])
         return output, ids
 
 ''' Sum of log probabilities
@@ -66,13 +62,12 @@ def sumLogProb(a, b):
 
 Arguments:
     seqs: list of sequences
-    name: list of names associated with sequences
     k: number of population structures to separate into
 Returns:
     pstructure: list of list of sequences in each population structure (list of k
     populations)
 '''
-def struct(seqs, name, k):
+def struct(seqs, k):
     pstructure = []
     for a in seqs:
         pstructure.append([])
@@ -269,7 +264,7 @@ def struct(seqs, name, k):
                                     #if allele in sample u, locus v is the second allele
                                     elif seqs[u][v:v+1] == "2":
                                         beta[v][w2][y2] = beta[v][w2][y2]+p[w2][v][1]*p[y2][v][1]*beta[v-1][ks][ks2]*0.5*(p11*p22+p21*p12)
-                                    #if there is one of each at the locus, allele could be either, assume first?
+                                    #if there is one of each at the locus, allele could be either, assume first
                                     elif seqs[u][v:v+1] == "1":
                                         beta[v][w2][y2] = beta[v][w2][y2]+p[w2][v][0]*p[y2][v][1]*beta[v-1][ks][ks2]*0.5*(p11*p22+p21*p12)
                                     #if unkown, average?
@@ -308,7 +303,7 @@ def struct(seqs, name, k):
                 total_pi = 0.0
                 for w4 in range(k):
                     for w4w in range(k):
-                        if z1temp[u][v2+1] == w4:#z1temp?
+                        if z1temp[u][v2+1] == w4:
                             p11 = exp(r*(-1)) + (1-exp(r*(-1)))*q[u][w4]
                         else:
                             p11 = (1-exp(r*(-1))) * q[u][w4]
@@ -371,23 +366,23 @@ def main():
     sequences, names = read_allele(args.f)
     k = args.k
 
-    structure,structure2, proportions = struct(sequences, names, k)
-    total1 = 0
-    total2 = 0
+    structure,structure2, proportions = struct(sequences, k)
+    #total1 = 0
+    #total2 = 0
     for i in range(len(structure)):
-        if i == 48:
-            print "dwarf from pop1: " + str(total1)
-            print "dwarf from pop2: " + str(total2)
-            print "--------------------------"
-            total1 = 0
-            total2 = 0
+        #if i == 48:
+        #    print "dwarf from pop1: " + str(total1)
+        #    print "dwarf from pop2: " + str(total2)
+        #    print "--------------------------"
+        #    total1 = 0
+        #    total2 = 0
         print proportions[i]
-        if proportions[i][0] < 0.5:
-            total2 = total2 + 1
-        else:
-            total1 = total1 + 1
-    print "normal from pop1: " + str(total1)
-    print "normal from pop2: " + str(total2)
+        #if proportions[i][0] < 0.5:
+        #    total2 = total2 + 1
+        #else:
+        #    total1 = total1 + 1
+    #print "normal from pop1: " + str(total1)
+    #print "normal from pop2: " + str(total2)
 
 
 if __name__ == '__main__':

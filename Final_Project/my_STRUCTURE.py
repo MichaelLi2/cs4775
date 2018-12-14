@@ -4,9 +4,7 @@ Arguments:
     -f: set of sequences to process
     -k: the number of populations desired
 Outputs:
-##################################################################
-    DON'T FORGET TO DO THIS
-##################################################################
+    - a list of each sample's admixture proportions for each population
 
 Example Usage:
     python my_STRUCTURE.py -f strucutre_input.txt -k 2
@@ -37,15 +35,13 @@ def read_allele(filename):
             if first == 0:
                 first = 1
                 continue
-            # input each line
+            #input each line
             else:
                 #isolate IDs
                 name = l.split(' ', 1)[0]
                 ids.append(name)
-                #print name
                 #add sequence to output list
-                output.append(''.join(l.split())[len(name):])#l.replace("" "", "")[len(name):])
-                #print ''.join(l.split())[len(name):]
+                output.append(''.join(l.split())[len(name):])
         return output, ids
 
 ''' Sum of log probabilities
@@ -66,13 +62,12 @@ def sumLogProb(a, b):
 
 Arguments:
     seqs: list of sequences
-    name: list of names associated with sequences
     k: number of population structures to separate into
 Returns:
     pstructure: list of list of sequences in each population structure (list of k
     populations)
 '''
-def struct(seqs, name, k):
+def struct(seqs, k):
     pstructure = []
     for a in seqs:
         pstructure.append([])
@@ -217,7 +212,7 @@ def struct(seqs, name, k):
                         total_pi1 = total_pi1 + q[u][w] * p[w][v][1]
                         pis2[u][v][w] = q[u][w] * p[w][v][1]
                         total_pi2 = total_pi2 + q[u][w] * p[w][v][1]
-                    #if there is one of each at the locus, allele could be either, assume first?
+                    #if there is one of each at the locus, allele could be either, assume first
                     elif seqs[u][v] == "1":
                         pis1[u][v][w] = q[u][w] * p[w][v][0]
                         total_pi1 = total_pi1 + q[u][w] * p[w][v][0]
@@ -280,23 +275,23 @@ def main():
     sequences, names = read_allele(args.f)
     k = args.k
 
-    structure,structure2, proportions = struct(sequences, names, k)
-    total1 = 0
-    total2 = 0
+    structure,structure2, proportions = struct(sequences, k)
+    #total1 = 0
+    #total2 = 0
     for i in range(len(structure)):
-        if i == 48:
-            print "dwarf from pop1: " + str(total1)
-            print "dwarf from pop2: " + str(total2)
-            print "--------------------------"
-            total1 = 0
-            total2 = 0
+        #if i == 48:
+        #    print "dwarf from pop1: " + str(total1)
+        #    print "dwarf from pop2: " + str(total2)
+        #    print "--------------------------"
+        #    total1 = 0
+        #    total2 = 0
         print proportions[i]
-        if proportions[i][0] < 0.5:
-            total2 = total2 + 1
-        else:
-            total1 = total1 + 1
-    print "normal from pop1: " + str(total1)
-    print "normal from pop2: " + str(total2)
+        #if proportions[i][0] < 0.5:
+        #    total2 = total2 + 1
+        #else:
+        #    total1 = total1 + 1
+    #print "normal from pop1: " + str(total1)
+    #print "normal from pop2: " + str(total2)
 
 
 if __name__ == '__main__':
